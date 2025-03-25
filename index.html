@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>澳門互動地圖</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #2d2d2d;
+            color: #d3d3d3;
+            overflow: hidden;
+        }
+        .container {
+            display: flex;
+            height: 100vh;
+            transition: all 0.3s ease;
+        }
+        .sidebar {
+            width: 350px;
+            background: linear-gradient(135deg, #363636, #2a2a2a);
+            box-shadow: 2px 0 15px rgba(0,0,0,0.4);
+            overflow-y: auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+        }
+        .map-container {
+            flex: 1;
+            position: relative;
+            background: #404040;
+        }
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+        h1 {
+            font-size: 26px;
+            margin: 0 0 20px;
+            color: #4a90e2;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            opacity: 0;
+            animation: fadeIn 0.5s ease forwards;
+        }
+        th, td {
+            padding: 14px;
+            text-align: left;
+            border-bottom: 1px solid #4a4a4a;
+        }
+        th {
+            background: #2a2a2a;
+            color: #a0a0a0;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        tr {
+            transition: background 0.2s ease;
+        }
+        tr:hover {
+            background: #4a4a4a;
+            cursor: pointer;
+        }
+        .legend {
+            padding: 12px;
+            background: rgba(54, 54, 54, 0.95);
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            font-size: 12px;
+            color: #d3d3d3;
+        }
+        .legend i {
+            width: 12px;
+            height: 12px;
+            float: left;
+            margin-right: 8px;
+            border-radius: 2px;
+        }
+        .toggle-btn {
+            display: none;
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 2000;
+            background: #4a90e2;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        /* 手機響應式設計 */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: 100%;
+                position: fixed;
+                transform: translateX(-100%);
+                background: linear-gradient(135deg, #363636, #2a2a2a);
+            }
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            .map-container {
+                height: 100%;
+            }
+            .toggle-btn {
+                display: block;
+            }
+            th, td {
+                font-size: 12px;
+                padding: 10px;
+            }
+            h1 {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="toggle-btn" onclick="toggleSidebar()">☰ 地點列表</button>
+    <div class="container">
+        <div class="sidebar">
+            <h1>澳門及周邊地點</h1>
+            <table id="location-table">
+                <thead>
+                    <tr>
+                        <th>名稱</th>
+                        <th>區域</th>
+                        <th>SQM</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <div class="map-container">
+            <div id="map"></div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // 初始化地圖
+        const map = L.map('map').setView([22.18, 113.55], 12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // 數據
+        const locations = [
+            { district: "花地瑪堂區", name: "澳門浸信中學", sqm: 13.86, lat: 22.212, lng: 113.555 },
+            { district: "花地瑪堂區", name: "聖保祿學校", sqm: 15.64, lat: 22.2054, lng: 113.55149 },
+            { district: "花王堂區", name: "筷子基衛生中心", sqm: 10.17, lat: 22.208, lng: 113.543 },
+            { district: "風順堂區", name: "媽閣輕軌站", sqm: 9.77, lat: 22.186, lng: 113.531 },
+            { district: "望德堂區", name: "塔石廣場", sqm: 9.87, lat: 22.198, lng: 113.548 },
+            { district: "大堂區", name: "新葡京", sqm: 8.46, lat: 22.189, lng: 113.543 },
+            { district: "嘉模堂區", name: "大潭山", sqm: 11.75, lat: 22.15902, lng: 113.57079 },
+            { district: "聖方濟各堂區", name: "龍爪角", sqm: 13.89, lat: 22.114, lng: 113.574 },
+            { district: "路氹填海區", name: "金光大道", sqm: 9.03, lat: 22.149, lng: 113.563 },
+            { district: "珠海", name: "拱北", sqm: 12.05, lat: 22.22588, lng: 113.55178 }
+        ];
+
+        // 反轉顏色函數
+        function getColor(sqm) {
+            return sqm > 14 ? '#2ECC40' :
+                   sqm > 12 ? '#FFDC00' :
+                   sqm > 10 ? '#FF851B' :
+                   '#FF4136';
+        }
+
+        // 存儲標記
+        const markers = {};
+        
+        // 添加標記並填充表格
+        const tbody = document.querySelector('#location-table tbody');
+        locations.forEach((location, index) => {
+            const marker = L.circleMarker([location.lat, location.lng], {
+                radius: 8,
+                fillColor: getColor(location.sqm),
+                color: '#fff',
+                weight: 2,
+                opacity: 1,
+                fillOpacity: 0.8
+            }).addTo(map);
+            
+            marker.bindPopup(`
+                <b>${location.name}</b><br>
+                區域: ${location.district}<br>
+                SQM: ${location.sqm}<br>
+                經緯度: ${location.lat}, ${location.lng}
+            `);
+            markers[index] = marker;
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${location.name}</td>
+                <td>${location.district}</td>
+                <td>${location.sqm}</td>
+            `;
+            row.addEventListener('click', () => {
+                map.setView([location.lat, location.lng], 15);
+                markers[index].openPopup();
+                if (window.innerWidth <= 768) toggleSidebar(); // 在手機上點擊後隱藏側邊欄
+            });
+            tbody.appendChild(row);
+        });
+
+        // 添加圖例
+        const legend = L.control({position: 'bottomright'});
+        legend.onAdd = function(map) {
+            const div = L.DomUtil.create('div', 'legend');
+            const grades = [0, 10, 12, 14];
+            div.innerHTML = '<strong>Sky Quality Meter (SQM)</strong><br>';
+            for (let i = 0; i < grades.length; i++) {
+                div.innerHTML +=
+                    '<i style="background:' + getColor(grades[i] + 1) + '"></i> ' +
+                    grades[i] + (grades[i + 1] ? '–' + grades[i + 1] : '+') + '<br>';
+            }
+            return div;
+        };
+        legend.addTo(map);
+
+        // 切換側邊欄
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('active');
+        }
+    </script>
+</body>
+</html>
