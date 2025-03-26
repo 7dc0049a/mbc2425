@@ -64,10 +64,11 @@
             z-index: 10;
         }
         tr {
-            transition: background 0.2s ease;
+            transition: background 0.2s ease, transform 0.2s ease;
         }
         tr:hover {
             background: #4a4a4a;
+            transform: scale(1.02);
             cursor: pointer;
         }
         .legend {
@@ -77,6 +78,7 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.3);
             font-size: 12px;
             color: #d3d3d3;
+            transition: opacity 0.3s ease;
         }
         .legend i {
             width: 12px;
@@ -86,10 +88,7 @@
             border-radius: 2px;
         }
         .toggle-btn {
-            display: none;
             position: fixed;
-            top: 10px;
-            left: 10px;
             z-index: 2000;
             background: #4a90e2;
             color: white;
@@ -97,13 +96,48 @@
             padding: 10px;
             border-radius: 5px;
             cursor: pointer;
+            transition: background 0.3s ease;
+            display: none;
+        }
+        .toggle-btn:hover {
+            background: #357abd;
+        }
+        #chart-container {
+            margin-top: 20px;
+            padding: 10px;
+            background: #363636;
+            border-radius: 5px;
+            opacity: 0;
+            animation: slideIn 0.5s ease forwards 0.5s;
+        }
+        canvas {
+            max-height: 200px;
+        }
+        .leaflet-popup-content-wrapper {
+            max-width: 300px; /* 調整彈窗最大寬度 */
+        }
+        .leaflet-popup-content {
+            margin: 10px;
+            max-height: 300px; /* 限制彈窗內容高度 */
+            overflow-y: auto; /* 如果內容超出，顯示滾動條 */
+        }
+        .leaflet-popup-content img {
+            max-width: 100%; /* 圖片寬度適應彈窗 */
+            max-height: 150px; /* 限制圖片最大高度 */
+            height: auto;
+            margin-top: 10px;
+            border-radius: 5px;
+            display: block;
         }
 
         @keyframes fadeIn {
             to { opacity: 1; }
         }
+        @keyframes slideIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
 
-        /* 手機響應式設計 */
         @media (max-width: 768px) {
             .container {
                 flex-direction: column;
@@ -113,7 +147,6 @@
                 height: 100%;
                 position: fixed;
                 transform: translateX(-100%);
-                background: linear-gradient(135deg, #363636, #2a2a2a);
             }
             .sidebar.active {
                 transform: translateX(0);
@@ -123,6 +156,10 @@
             }
             .toggle-btn {
                 display: block;
+                top: 10px;
+                right: 10px;
+                bottom: auto;
+                left: auto;
             }
             th, td {
                 font-size: 12px;
@@ -130,6 +167,9 @@
             }
             h1 {
                 font-size: 20px;
+            }
+            #chart-container {
+                max-height: 150px;
             }
         }
     </style>
@@ -149,6 +189,9 @@
                 </thead>
                 <tbody></tbody>
             </table>
+            <div id="chart-container">
+                <canvas id="sqmChart"></canvas>
+            </div>
         </div>
         <div class="map-container">
             <div id="map"></div>
@@ -156,6 +199,7 @@
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         // 初始化地圖
         const map = L.map('map').setView([22.18, 113.55], 12);
@@ -165,16 +209,16 @@
 
         // 數據
         const locations = [
-            { district: "花地瑪堂區", name: "澳門浸信中學", sqm: 13.86, lat: 22.212, lng: 113.555 },
-            { district: "花地瑪堂區", name: "聖保祿學校", sqm: 15.64, lat: 22.2054, lng: 113.55149 },
-            { district: "花王堂區", name: "筷子基衛生中心", sqm: 10.17, lat: 22.208, lng: 113.543 },
-            { district: "風順堂區", name: "媽閣輕軌站", sqm: 9.77, lat: 22.186, lng: 113.531 },
-            { district: "望德堂區", name: "塔石廣場", sqm: 9.87, lat: 22.198, lng: 113.548 },
-            { district: "大堂區", name: "新葡京", sqm: 8.46, lat: 22.189, lng: 113.543 },
-            { district: "嘉模堂區", name: "大潭山", sqm: 11.75, lat: 22.15902, lng: 113.57079 },
-            { district: "聖方濟各堂區", name: "龍爪角", sqm: 13.89, lat: 22.114, lng: 113.574 },
-            { district: "路氹填海區", name: "金光大道", sqm: 9.03, lat: 22.149, lng: 113.563 },
-            { district: "珠海", name: "拱北", sqm: 12.05, lat: 22.22588, lng: 113.55178 }
+            { district: "花地瑪堂區", name: "澳門浸信中學", sqm: 13.86, lat: 22.212, lng: 113.555, image: "jpg/花地瑪堂區.png" },
+            { district: "花地瑪堂區", name: "聖保祿學校", sqm: 15.64, lat: 22.2054, lng: 113.55149, image: "jpg/花地瑪堂區2.png" },
+            { district: "花王堂區", name: "筷子基衛生中心", sqm: 10.17, lat: 22.208, lng: 113.543, image: "jpg/花王堂區.png" },
+            { district: "風順堂區", name: "媽閣輕軌站", sqm: 9.77, lat: 22.186, lng: 113.531, image: "jpg/風順堂區.png" },
+            { district: "望德堂區", name: "塔石廣場", sqm: 9.87, lat: 22.198, lng: 113.548, image: "jpg/望德堂區.png" },
+            { district: "大堂區", name: "新葡京", sqm: 8.46, lat: 22.189, lng: 113.543, image: "jpg/大堂區.png" },
+            { district: "嘉模堂區", name: "大潭山", sqm: 11.75, lat: 22.153, lng: 113.563, image: "jpg/嘉模堂區.jpg" },
+            { district: "聖方濟各堂區", name: "龍爪角", sqm: 13.89, lat: 22.114, lng: 113.574, image: "jpg/聖方濟各堂區.png" },
+            { district: "路氹填海區", name: "金光大道", sqm: 9.03, lat: 22.149, lng: 113.563, image: "jpg/路氹填海區.png" },
+            { district: "珠海", name: "拱北", sqm: 12.05, lat: 22.22588, lng: 113.55178, image: "jpg/zhuhai.png" }
         ];
 
         // 反轉顏色函數
@@ -185,10 +229,8 @@
                    '#FF4136';
         }
 
-        // 存儲標記
-        const markers = {};
-        
         // 添加標記並填充表格
+        const markerLayer = L.layerGroup();
         const tbody = document.querySelector('#location-table tbody');
         locations.forEach((location, index) => {
             const marker = L.circleMarker([location.lat, location.lng], {
@@ -198,15 +240,15 @@
                 weight: 2,
                 opacity: 1,
                 fillOpacity: 0.8
-            }).addTo(map);
-            
+            });
             marker.bindPopup(`
                 <b>${location.name}</b><br>
                 區域: ${location.district}<br>
                 SQM: ${location.sqm}<br>
-                經緯度: ${location.lat}, ${location.lng}
+                經緯度: ${location.lat}, ${location.lng}<br>
+                <img src="${location.image}" alt="${location.name}" onerror="this.style.display='none'">
             `);
-            markers[index] = marker;
+            markerLayer.addLayer(marker);
 
             const row = document.createElement('tr');
             row.innerHTML = `
@@ -215,11 +257,49 @@
                 <td>${location.sqm}</td>
             `;
             row.addEventListener('click', () => {
-                map.setView([location.lat, location.lng], 15);
-                markers[index].openPopup();
-                if (window.innerWidth <= 768) toggleSidebar(); // 在手機上點擊後隱藏側邊欄
+                map.setView([location.lat, location.lng], 15, { animate: true, duration: 0.5 });
+                marker.openPopup();
+                if (window.innerWidth <= 768) toggleSidebar();
             });
             tbody.appendChild(row);
+        });
+        markerLayer.addTo(map);
+
+        // 計算各區域平均 SQM
+        const districtAvg = {};
+        locations.forEach(loc => {
+            if (!districtAvg[loc.district]) {
+                districtAvg[loc.district] = { total: 0, count: 0 };
+            }
+            districtAvg[loc.district].total += loc.sqm;
+            districtAvg[loc.district].count += 1;
+        });
+        const districts = Object.keys(districtAvg);
+        const avgSQM = districts.map(d => (districtAvg[d].total / districtAvg[d].count).toFixed(2));
+
+        // 添加柱狀圖
+        const ctx = document.getElementById('sqmChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: districts,
+                datasets: [{
+                    label: '平均 SQM',
+                    data: avgSQM,
+                    backgroundColor: '#4a90e2',
+                    borderColor: '#357abd',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: { beginAtZero: true, max: 20 }
+                },
+                animation: {
+                    duration: 1000,
+                    easing: 'easeOutBounce'
+                }
+            }
         });
 
         // 添加圖例
