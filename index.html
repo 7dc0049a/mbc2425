@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"> <!-- 確保 IE 使用最新渲染引擎 -->
     <title>澳門互動地圖</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     <style>
         body {
             margin: 0;
@@ -13,23 +14,34 @@
             background: #2d2d2d;
             color: #d3d3d3;
             overflow: hidden;
+            -webkit-font-smoothing: antialiased; /* 改善 Safari 字體渲染 */
+            -moz-osx-font-smoothing: grayscale; /* 改善 Firefox macOS 字體渲染 */
         }
         .container {
+            display: -webkit-box; /* Safari */
+            display: -ms-flexbox; /* IE */
             display: flex;
             height: 100vh;
+            -webkit-transition: all 0.3s ease; /* Safari */
             transition: all 0.3s ease;
         }
         .sidebar {
             width: 350px;
+            background: -webkit-linear-gradient(135deg, #363636, #2a2a2a); /* Safari */
+            background: -moz-linear-gradient(135deg, #363636, #2a2a2a); /* Firefox */
             background: linear-gradient(135deg, #363636, #2a2a2a);
+            -webkit-box-shadow: 2px 0 15px rgba(0,0,0,0.4); /* Safari */
             box-shadow: 2px 0 15px rgba(0,0,0,0.4);
             overflow-y: auto;
             padding: 20px;
             position: relative;
             z-index: 1000;
+            -webkit-transition: -webkit-transform 0.3s ease; /* Safari */
             transition: transform 0.3s ease;
         }
         .map-container {
+            -webkit-box-flex: 1; /* Safari */
+            -ms-flex: 1; /* IE */
             flex: 1;
             position: relative;
             background: #404040;
@@ -49,6 +61,7 @@
             border-collapse: collapse;
             font-size: 14px;
             opacity: 0;
+            -webkit-animation: fadeIn 0.5s ease forwards; /* Safari */
             animation: fadeIn 0.5s ease forwards;
         }
         th, td {
@@ -59,15 +72,18 @@
         th {
             background: #2a2a2a;
             color: #a0a0a0;
+            position: -webkit-sticky; /* Safari */
             position: sticky;
             top: 0;
             z-index: 10;
         }
         tr {
+            -webkit-transition: background 0.2s ease, -webkit-transform 0.2s ease; /* Safari */
             transition: background 0.2s ease, transform 0.2s ease;
         }
         tr:hover {
             background: #4a4a4a;
+            -webkit-transform: scale(1.02); /* Safari */
             transform: scale(1.02);
             cursor: pointer;
         }
@@ -75,9 +91,11 @@
             padding: 12px;
             background: rgba(54, 54, 54, 0.95);
             border-radius: 8px;
+            -webkit-box-shadow: 0 2px 10px rgba(0,0,0,0.3); /* Safari */
             box-shadow: 0 2px 10px rgba(0,0,0,0.3);
             font-size: 12px;
             color: #d3d3d3;
+            -webkit-transition: opacity 0.3s ease; /* Safari */
             transition: opacity 0.3s ease;
         }
         .legend i {
@@ -96,6 +114,7 @@
             padding: 10px;
             border-radius: 5px;
             cursor: pointer;
+            -webkit-transition: background 0.3s ease; /* Safari */
             transition: background 0.3s ease;
             display: none;
         }
@@ -108,6 +127,7 @@
             background: #363636;
             border-radius: 5px;
             opacity: 0;
+            -webkit-animation: slideIn 0.5s ease forwards 0.5s; /* Safari */
             animation: slideIn 0.5s ease forwards 0.5s;
             position: relative;
         }
@@ -122,6 +142,7 @@
             margin: 10px;
             max-height: 300px;
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch; /* Safari 滾動優化 */
         }
         .leaflet-popup-content img {
             max-width: 100%;
@@ -132,8 +153,15 @@
             display: block;
         }
 
+        @-webkit-keyframes fadeIn { /* Safari */
+            to { opacity: 1; }
+        }
         @keyframes fadeIn {
             to { opacity: 1; }
+        }
+        @-webkit-keyframes slideIn { /* Safari */
+            from { -webkit-transform: translateY(20px); opacity: 0; }
+            to { -webkit-transform: translateY(0); opacity: 1; }
         }
         @keyframes slideIn {
             from { transform: translateY(20px); opacity: 0; }
@@ -142,15 +170,20 @@
 
         @media (max-width: 768px) {
             .container {
+                -webkit-box-orient: vertical; /* Safari */
+                -webkit-box-direction: normal; /* Safari */
+                -ms-flex-direction: column; /* IE */
                 flex-direction: column;
             }
             .sidebar {
                 width: 100%;
                 height: 100%;
                 position: fixed;
+                -webkit-transform: translateX(-100%); /* Safari */
                 transform: translateX(-100%);
             }
             .sidebar.active {
+                -webkit-transform: translateX(0); /* Safari */
                 transform: translateX(0);
             }
             .map-container {
@@ -171,13 +204,29 @@
                 font-size: 20px;
             }
             #chart-container {
-                max-height: 250px; /* 增加手機上的圖表高度 */
-                overflow-x: auto; /* 橫向滾動 */
-                -webkit-overflow-scrolling: touch; /* 改善手機滾動體驗 */
+                max-height: 250px;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch; /* Safari 滾動優化 */
             }
             #sqmChart {
-                min-width: 600px; /* 確保圖表寬度足夠顯示所有數據 */
-                height: 200px !important; /* 固定高度 */
+                min-width: 600px;
+                height: 200px !important;
+            }
+        }
+
+        /* IE11 兼容性修復 */
+        @media all and (-ms-high-contrast: none), (-ms-high-contrast: active) {
+            .container {
+                display: block;
+            }
+            .sidebar {
+                float: left;
+                width: 350px;
+                height: 100%;
+            }
+            .map-container {
+                overflow: hidden;
+                height: 100%;
             }
         }
     </style>
@@ -206,17 +255,23 @@
         </div>
     </div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- 兼容性 CDN -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js" integrity="sha256-J2Z5DvkW0VUKQCa+SljWEAReuOQhzQj+XXP48SxmBXQ=" crossorigin=""></script>
     <script>
+        // 檢查瀏覽器是否支持 Promise（IE11 不支持）
+        if (!window.Promise) {
+            document.write('<script src="https://cdn.jsdelivr.net/npm/promise-polyfill@8/dist/polyfill.min.js"><\/script>');
+        }
+
         // 初始化地圖
-        const map = L.map('map').setView([22.18, 113.55], 12);
+        var map = L.map('map').setView([22.18, 113.55], 12);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
 
         // 數據
-        const locations = [
+        var locations = [
             { district: "花地瑪堂區", name: "澳門浸信中學", sqm: 13.86, lat: 22.212, lng: 113.555, image: "jpg/花地瑪堂區.png" },
             { district: "花地瑪堂區", name: "聖保祿學校", sqm: 15.64, lat: 22.2054, lng: 113.55149, image: "jpg/花地瑪堂區2.png" },
             { district: "花王堂區", name: "筷子基衛生中心", sqm: 10.17, lat: 22.208, lng: 113.543, image: "jpg/花王堂區.png" },
@@ -238,10 +293,10 @@
         }
 
         // 添加標記並填充表格
-        const markerLayer = L.layerGroup();
-        const tbody = document.querySelector('#location-table tbody');
-        locations.forEach((location, index) => {
-            const marker = L.circleMarker([location.lat, location.lng], {
+        var markerLayer = L.layerGroup();
+        var tbody = document.querySelector('#location-table tbody');
+        locations.forEach(function(location, index) {
+            var marker = L.circleMarker([location.lat, location.lng], {
                 radius: 8,
                 fillColor: getColor(location.sqm),
                 color: '#fff',
@@ -249,22 +304,18 @@
                 opacity: 1,
                 fillOpacity: 0.8
             });
-            marker.bindPopup(`
-                <b>${location.name}</b><br>
-                區域: ${location.district}<br>
-                SQM: ${location.sqm}<br>
-                經緯度: ${location.lat}, ${location.lng}<br>
-                <img src="${location.image}" alt="${location.name}" onerror="this.style.display='none'">
-            `);
+            marker.bindPopup(
+                '<b>' + location.name + '</b><br>' +
+                '區域: ' + location.district + '<br>' +
+                'SQM: ' + location.sqm + '<br>' +
+                '經緯度: ' + location.lat + ', ' + location.lng + '<br>' +
+                '<img src="' + location.image + '" alt="' + location.name + '" onerror="this.style.display=\'none\'">'
+            );
             markerLayer.addLayer(marker);
 
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${location.name}</td>
-                <td>${location.district}</td>
-                <td>${location.sqm}</td>
-            `;
-            row.addEventListener('click', () => {
+            var row = document.createElement('tr');
+            row.innerHTML = '<td>' + location.name + '</td><td>' + location.district + '</td><td>' + location.sqm + '</td>';
+            row.addEventListener('click', function() {
                 map.setView([location.lat, location.lng], 15, { animate: true, duration: 0.5 });
                 marker.openPopup();
                 if (window.innerWidth <= 768) toggleSidebar();
@@ -274,20 +325,22 @@
         markerLayer.addTo(map);
 
         // 計算各區域平均 SQM
-        const districtAvg = {};
-        locations.forEach(loc => {
+        var districtAvg = {};
+        locations.forEach(function(loc) {
             if (!districtAvg[loc.district]) {
                 districtAvg[loc.district] = { total: 0, count: 0 };
             }
             districtAvg[loc.district].total += loc.sqm;
             districtAvg[loc.district].count += 1;
         });
-        const districts = Object.keys(districtAvg);
-        const avgSQM = districts.map(d => (districtAvg[d].total / districtAvg[d].count).toFixed(2));
+        var districts = Object.keys(districtAvg);
+        var avgSQM = districts.map(function(d) {
+            return (districtAvg[d].total / districtAvg[d].count).toFixed(2);
+        });
 
         // 添加柱狀圖
-        const ctx = document.getElementById('sqmChart').getContext('2d');
-        const sqmChart = new Chart(ctx, {
+        var ctx = document.getElementById('sqmChart').getContext('2d');
+        var sqmChart = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: districts,
@@ -304,12 +357,12 @@
                     y: { 
                         beginAtZero: true, 
                         max: 20,
-                        ticks: { font: { size: 12 } } // 調整 Y 軸字體大小
+                        ticks: { font: { size: 12 } }
                     },
                     x: { 
                         ticks: { 
-                            font: { size: 10 }, // 調整 X 軸字體大小
-                            maxRotation: 45, // 旋轉標籤避免重疊
+                            font: { size: 10 },
+                            maxRotation: 45,
                             minRotation: 45 
                         } 
                     }
@@ -320,26 +373,26 @@
                 },
                 plugins: {
                     legend: {
-                        labels: { font: { size: 12 } } // 調整圖例字體大小
+                        labels: { font: { size: 12 } }
                     },
                     tooltip: {
-                        enabled: true, // 啟用工具提示
+                        enabled: true,
                         mode: 'index',
                         intersect: false
                     }
                 },
                 responsive: true,
-                maintainAspectRatio: false // 允許圖表根據容器調整比例
+                maintainAspectRatio: false
             }
         });
 
         // 添加圖例
-        const legend = L.control({position: 'bottomright'});
+        var legend = L.control({position: 'bottomright'});
         legend.onAdd = function(map) {
-            const div = L.DomUtil.create('div', 'legend');
-            const grades = [0, 10, 12, 14];
+            var div = L.DomUtil.create('div', 'legend');
+            var grades = [0, 10, 12, 14];
             div.innerHTML = '<strong>Sky Quality Meter (SQM)</strong><br>';
-            for (let i = 0; i < grades.length; i++) {
+            for (var i = 0; i < grades.length; i++) {
                 div.innerHTML +=
                     '<i style="background:' + getColor(grades[i] + 1) + '"></i> ' +
                     grades[i] + (grades[i + 1] ? '–' + grades[i + 1] : '+') + '<br>';
@@ -350,8 +403,20 @@
 
         // 切換側邊欄
         function toggleSidebar() {
-            const sidebar = document.querySelector('.sidebar');
+            var sidebar = document.querySelector('.sidebar');
             sidebar.classList.toggle('active');
+        }
+
+        // IE11 兼容性修復：檢查 classList 支持
+        if (!Element.prototype.classList) {
+            Element.prototype.classList = {
+                add: function(className) { this.className += ' ' + className; },
+                remove: function(className) { this.className = this.className.replace(new RegExp(className, 'g'), ''); },
+                toggle: function(className) {
+                    if (this.className.indexOf(className) === -1) this.add(className);
+                    else this.remove(className);
+                }
+            };
         }
     </script>
 </body>
